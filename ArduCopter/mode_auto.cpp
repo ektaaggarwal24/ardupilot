@@ -875,4 +875,8 @@ void Copter::ModeAuto::payload_place_run_descend()
     copter.land_run_vertical_control();
 }
 
+float Copter:: get_remaining_distance() // ekta added
+{
+    return wp_nav->get_wp_distance_to_destination();
+}
 #endif

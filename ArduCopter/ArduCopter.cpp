@@ -74,6 +74,13 @@
  */
 
 #include "Copter.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <map>
+
+using namespace std;
 
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(Copter, &copter, func, rate_hz, max_time_micros)
 
@@ -86,6 +93,14 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(rc_loop,              100,    130),
     SCHED_TASK(throttle_loop,         50,     75),
     SCHED_TASK(update_GPS,            50,    200),
+#if COLLECTLOGS == ENABLED
+    SCHED_TASK(ids_custom_logs,       1,    200), // ekta added
+#endif
+
+#if INTRUSIONDETECTION == ENABLED
+    SCHED_TASK(detect_intrusion,       0.1,    400), // ekta added
+#endif
+
 #if OPTFLOW == ENABLED
     SCHED_TASK(update_optical_flow,  200,    160),
 #endif
@@ -201,7 +216,9 @@ void Copter::setup()
     StorageManager::set_layout_copter();
 
     init_ardupilot();
-
+    
+    IDS_setup(); // ekta added
+   
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks), MASK_LOG_PM);
 }
@@ -270,6 +287,33 @@ void Copter::rc_loop()
     read_control_switch();
 }
 
+
+void Copter::ids_custom_logs()
+{
+     int32_t my_baro_alt = barometer.get_altitude(); // in meters
+     barometer.update();
+     uint16_t my_battery = (uint16_t)roundf(battery.capacity_remaining_pct()); // in %
+     float acc = ins.get_accel().length();
+     //float remDist = get_remaining_distance(); // in centimeters - converted to meters
+     float dist = wp_nav->returnDistanceTravelledOnTrack();
+     uint32_t speed = 0;
+     uint32_t course = 0;
+     for (uint8_t i=0; i<gps.num_sensors(); i++) 
+     {
+	 speed = DataFlash.return_current_speed(gps, i); // in m/s
+         course = DataFlash.return_ground_course(gps, i);
+     }
+     write_ids_custom_logs(my_baro_alt,my_battery,acc,dist,speed,course);
+}
+
+void Copter::detect_intrusion()
+{
+  ids_detect_intrusion();
+}
+
+
+
+
 // throttle_loop - should be run at 50 hz
 // ---------------------------
 void Copter::throttle_loop()
@@ -299,6 +343,8 @@ void Copter::update_batt_compass(void)
     // read battery before compass because it may be used for motor interference compensation
     read_battery();
 
+//#if BRANCHFLIPPING == ENABLED - branch 1 flipped here
+
     if(g.compass_enabled) {
         // update compass with throttle value - used for compassmot
         compass.set_throttle(motors->get_throttle());
@@ -309,6 +355,9 @@ void Copter::update_batt_compass(void)
             DataFlash.Log_Write_Compass(compass);
         }
     }
+
+
+   
 }
 
 // Full rate logging of attitude, rate and pid loops
@@ -477,7 +526,9 @@ void Copter::update_GPS(void)
         }
     }
 
-    if (gps_updated) {
+//#if BRANCHFLIPPING == ENABLED //branch 2 flipped here
+
+     if (gps_updated) {
         // set system time if necessary
         set_system_time_from_GPS();
 
@@ -485,6 +536,8 @@ void Copter::update_GPS(void)
         camera.update();
 #endif
     }
+
+
 }
 
 void Copter::init_simple_bearing()
@@ -517,6 +570,19 @@ void Copter::update_simple_mode(void)
     // mark radio frame as consumed
     ap.new_radio_frame = false;
 
+#if BRANCHFLIPPING == ENABLED
+    //cout <<"************************************************";
+    if (ap.simple_mode != 1) {
+        // rotate roll, pitch input by -initial simple heading (i.e. north facing)
+        rollx = channel_roll->get_control_in()*simple_cos_yaw - channel_pitch->get_control_in()*simple_sin_yaw;
+        pitchx = channel_roll->get_control_in()*simple_sin_yaw + channel_pitch->get_control_in()*simple_cos_yaw;
+    }else{
+        // rotate roll, pitch input by -super simple heading (reverse of heading to home)
+        rollx = channel_roll->get_control_in()*super_simple_cos_yaw - channel_pitch->get_control_in()*super_simple_sin_yaw;
+        pitchx = channel_roll->get_control_in()*super_simple_sin_yaw + channel_pitch->get_control_in()*super_simple_cos_yaw;
+    }
+
+#else
     if (ap.simple_mode == 1) {
         // rotate roll, pitch input by -initial simple heading (i.e. north facing)
         rollx = channel_roll->get_control_in()*simple_cos_yaw - channel_pitch->get_control_in()*simple_sin_yaw;
@@ -526,6 +592,9 @@ void Copter::update_simple_mode(void)
         rollx = channel_roll->get_control_in()*super_simple_cos_yaw - channel_pitch->get_control_in()*super_simple_sin_yaw;
         pitchx = channel_roll->get_control_in()*super_simple_sin_yaw + channel_pitch->get_control_in()*super_simple_cos_yaw;
     }
+
+#endif
+
 
     // rotate roll, pitch input from north facing to vehicle's perspective
     channel_roll->set_control_in(rollx*ahrs.cos_yaw() + pitchx*ahrs.sin_yaw());

@@ -1,6 +1,9 @@
 #include "Copter.h"
 
 #include "GCS_Mavlink.h"
+#include <iostream>
+
+
 
 void Copter::gcs_send_heartbeat(void)
 {
@@ -113,10 +116,10 @@ NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
     if (battery.has_current() && battery.healthy()) {
         battery_remaining = battery.capacity_remaining_pct();
         battery_current = battery.current_amps() * 100;
+
     }
 
     update_sensor_status_flags();
-    
     mavlink_msg_sys_status_send(
         chan,
         control_sensors_present,

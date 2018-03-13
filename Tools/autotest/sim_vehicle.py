@@ -312,6 +312,7 @@ def do_build_waf(opts, frame_options):
     root_dir = find_root_dir()
     os.chdir(root_dir)
 
+    print (root_dir)
     waf_light = os.path.join(root_dir, "modules/waf/waf-light")
 
     cmd_configure = [waf_light, "configure", "--board", "sitl"]

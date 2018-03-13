@@ -25,7 +25,7 @@
 #include <AP_InertialSensor/AP_InertialSensor_Backend.h>
 
 #include <stdint.h>
-
+#include<string>
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
 #include <uORB/topics/esc_status.h>
 #endif
@@ -99,7 +99,8 @@ public:
     bool WritesEnabled() const { return _writes_enabled; }
 
     void StopLogging();
-
+    uint32_t return_current_speed(const AP_GPS &gps, uint8_t i); // ekta added
+    uint32_t return_ground_course(const AP_GPS &gps, uint8_t i); // ekta added
     void Log_Write_Parameter(const char *name, float value);
     void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, uint64_t time_us=0);
     void Log_Write_RFND(const RangeFinder &rangefinder);

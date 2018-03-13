@@ -20,8 +20,12 @@
 #include "DataFlash_File_sd.h"
 #include "DFMessageWriter.h"
 
-extern const AP_HAL::HAL& hal;
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
 
+extern const AP_HAL::HAL& hal;
 
 /*
   read and print a log entry using the format strings from the given structure
@@ -303,6 +307,17 @@ bool DataFlash_Backend::Log_Write_Parameter(const AP_Param *ap,
     return Log_Write_Parameter(name, ap->cast_to_float(type));
 }
 
+uint32_t DataFlash_Class::return_current_speed(const AP_GPS &gps, uint8_t i)
+{
+     return gps.ground_speed(i);
+}
+
+uint32_t DataFlash_Class::return_ground_course(const AP_GPS &gps, uint8_t i)
+{
+     return gps.ground_course(i);
+}
+
+
 // Write an GPS packet
 void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, uint64_t time_us)
 {
@@ -345,6 +360,7 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, uint64_t time_
         delta_ms      : gps.last_message_delta_time_ms(i)
     };
     WriteBlock(&pkt2, sizeof(pkt2));
+
 }
 
 
@@ -1570,6 +1586,7 @@ void DataFlash_Class::Log_Write_Current_instance(const uint64_t time_us,
         resistance          : battery.get_resistance(battery_instance)
     };
     WriteBlock(&pkt, sizeof(pkt));
+
 
     // individual cell voltages
     if (battery.has_cell_voltages(battery_instance)) {

@@ -85,6 +85,10 @@
 #include <AP_SmartRTL/AP_SmartRTL.h>
 #include <AP_TempCalibration/AP_TempCalibration.h>
 
+#include <chrono> //ekta added
+#include <ctime> // ekta added
+#include <vector> // ekta added
+
 // Configuration
 #include "defines.h"
 #include "config.h"
@@ -166,6 +170,7 @@
 #endif
 
 
+
 class Copter : public AP_HAL::HAL::Callbacks {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -185,6 +190,7 @@ public:
     // HAL::Callbacks implementation.
     void setup() override;
     void loop() override;
+    void IDS_setup();
 
 private:
     static const AP_FWVersion fwver;
@@ -636,7 +642,31 @@ private:
     void update_using_interlock();
     void set_motor_emergency_stop(bool b);
 
+    // IDS.cpp
+    bool startWritingLogs; //ekta added
+    float errorTolerated;
+    bool hasReadInvariantsFile; // ekta added
+    float totalDistanceTravelledTillNow; // ekta added
+    float previousDistanceTravelledInThisTrack; //ekta added
+    bool hasAttackCountdownBegun; // ekta added
+    std::chrono::system_clock::time_point flightStartTime; // ekta added
+    int attackStartAfterXSeconds; // ekta added
+    std::vector<std::string> phyVariables; //ekta added
+    std::vector<float> nonFaultyInvariants; //ekta added
+    void write_ids_custom_logs(int32_t my_baro_alt, uint16_t my_battery,float acc,float dist,uint32_t speed, uint32_t course); //ekta added
+    void ids_detect_intrusion(); //ekta added
+
+    void generate_invariants_from_current_logs(); // ekta added
+    float calculateCorrelationCoefficient(std::vector<float> vector1, std::vector<float> vector2); // ekta added
+
+
     // ArduCopter.cpp
+
+    uint16_t faultyBatteryValue; //ekta added
+    void detect_intrusion(); //ekta added
+    void ids_custom_logs();
+    void perf_update(void);
+    void stats_update();
     void fast_loop();
     void rc_loop();
     void throttle_loop();
@@ -652,6 +682,7 @@ private:
     void update_super_simple_bearing(bool force_update);
     void read_AHRS(void);
     void update_altitude();
+
 
     // Attitude.cpp
     float get_smoothing_gain();
@@ -759,6 +790,7 @@ private:
     void gcs_data_stream_send(void);
     void gcs_check_input(void);
 
+
     // heli.cpp
     void heli_init();
     void check_dynamic_flight(void);
@@ -820,6 +852,7 @@ private:
     void set_auto_yaw_rate(float turn_rate_cds);
     float get_auto_heading(void);
     float get_auto_yaw_rate_cds();
+    float get_remaining_distance();
 
     // mode_land.cpp
     void land_run_vertical_control(bool pause_descent = false);

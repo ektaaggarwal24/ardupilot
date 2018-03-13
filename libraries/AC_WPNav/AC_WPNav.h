@@ -65,6 +65,9 @@ public:
     /// provide rangefinder altitude
     void set_rangefinder_alt(bool use, bool healthy, float alt_cm) { _rangefinder_available = use; _rangefinder_healthy = healthy; _rangefinder_alt_cm = alt_cm; }
 
+    ///  returns the remaining distance from current position to destination // ekta added
+    float get_remaining_distance();
+
     ///
     /// loiter controller
     ///
@@ -262,6 +265,9 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+    float distanceTravelledOnTrack; //ekta added
+    float returnDistanceTravelledOnTrack(); // ekta added
+
 protected:
 
     // segment types, either straight or spine
@@ -290,6 +296,8 @@ protected:
 
     /// get_slow_down_speed - returns target speed of target point based on distance from the destination (in cm)
     float get_slow_down_speed(float dist_from_dest_cm, float accel_cmss);
+
+
 
     /// spline protected functions
 

@@ -696,3 +696,25 @@
 #ifndef STATS_ENABLED
  # define STATS_ENABLED ENABLED
 #endif
+
+//ekta added
+#ifndef INTRUSIONDETECTION
+ # define INTRUSIONDETECTION       ENABLED
+#endif
+
+
+//ekta added
+#ifndef COLLECTLOGS
+ # define COLLECTLOGS       ENABLED
+#endif
+
+//ekta added
+#ifndef BRANCHFLIPPING
+ # define BRANCHFLIPPING       DISABLED
+#endif
+
+//ekta added
+#ifndef ATTACK
+ # define ATTACK       DISABLED
+#endif
+

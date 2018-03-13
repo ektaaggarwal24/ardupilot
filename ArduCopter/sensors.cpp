@@ -12,6 +12,7 @@ void Copter::init_barometer(bool full_calibration)
 }
 
 // return barometric altitude in centimeters
+//------------------ekta - barometer from here
 void Copter::read_barometer(void)
 {
     barometer.update();
@@ -178,6 +179,11 @@ void Copter::update_optical_flow(void)
 void Copter::read_battery(void)
 {
     battery.read();
+    battery.capacity_remaining_pct(); // ekta added
+    // update compass with current value
+    if (battery.has_current()) {
+        compass.set_current(battery.current_amps());
+    }
 
     // update motors with voltage and current
     if (battery.get_type() != AP_BattMonitor_Params::BattMonitor_TYPE_NONE) {
